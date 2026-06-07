@@ -8,7 +8,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version="3.0.2",
+    version="3.1.0",
     package_dir={"": "src"},
     description="The Official Masonite ORM",
     long_description=long_description,
@@ -33,7 +33,7 @@ setup(
     install_requires=[
         "inflection>=0.3,<0.6",
         "pendulum>=3.0,<4.0",
-        "cleo>=0.8.0,<2.0",
+        "cleo>=2.1,<3",
     ],
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[

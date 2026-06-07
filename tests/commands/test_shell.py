@@ -1,5 +1,5 @@
 import unittest
-from cleo import CommandTester
+from cleo.testers.command_tester import CommandTester
 
 from src.masoniteorm.commands import ShellCommand
 
