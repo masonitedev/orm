@@ -184,3 +184,17 @@ class TestRelationships(unittest.TestCase):
         store = Store.hydrate({"id": 2, "name": "Walmart"})
         store = Store.with_("products").first()
         self.assertEqual(store.products.count(), 3)
+
+    def test_belongs_to_eager_many_on_collection(self):
+        # Eager loading a BelongsToMany onto a collection (get) used to raise
+        # NotImplementedError because map_related was not implemented. See #12.
+        stores = Store.with_("products").get()
+        self.assertEqual(stores.count(), 2)
+
+        products_by_store = {
+            store.id: sorted(product.id for product in store.products)
+            for store in stores
+        }
+        # Each store keeps its own related products rather than sharing one set.
+        self.assertEqual(products_by_store[1], [1, 2, 3])
+        self.assertEqual(products_by_store[2], [4, 5, 6])

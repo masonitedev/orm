@@ -355,6 +355,9 @@ class BelongsToMany(BaseRelationship):
 
         return result
 
+    def map_related(self, related_result):
+        return related_result
+
     def register_related(self, key, model, collection):
         model.add_relation(
             {
