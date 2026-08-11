@@ -20,24 +20,7 @@ class TestMySQLGlobalScopes(unittest.TestCase):
         query_sql = UserSoft.where("name", "joe").to_sql()
         self.assertEqual(query_sql, expected_sql)
 
-    # def test_can_use_global_scopes_on_delete(self):
-    #     expected_sql = "UPDATE `users` SET `users`.`deleted_at` = 'now' WHERE `users`.`name` = 'joe'"
-    #     self.assertEqual(
-    #         expected_sql,
-    #         User.apply_scope(SoftDeletes)
-    #         .where("name", "joe")
-    #         .delete(query=True)
-    #         .to_sql(),
-    #     )
-
     def test_can_use_global_scopes_on_time(self):
-        expected_sql = "INSERT INTO `users` (`users`.`name`, `users`.`updated_at`, `users`.`created_at`) VALUES ('Joe'"
-        self.assertTrue(
-            User.create({"name": "Joe"}, query=True)
-            .to_sql()
-            .startswith(expected_sql)
-        )
-
-    # def test_can_use_global_scopes_on_inherit(self):
-    #     sql = "SELECT * FROM `user_softs` WHERE `user_softs`.`deleted_at` IS NULL"
-    #     self.assertEqual(sql, UserSoft.all(query=True))
+        expected_sql = "INSERT INTO `users` (`users`.`name`, `users`.`created_at`, `users`.`updated_at`) VALUES ('Joe'"
+        query_sql = User.create({"name": "Joe"}, query=True).to_sql()
+        self.assertTrue(query_sql.startswith(expected_sql))

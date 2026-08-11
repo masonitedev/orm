@@ -288,7 +288,6 @@ class PostgresPlatform(Platform):
                     columns=", ".join(dropped_sql),
                 )
             )
-
         if table.changed_columns:
             changed_sql = []
 
@@ -297,18 +296,18 @@ class PostgresPlatform(Platform):
                 if column.column_type == "enum":
                     values = ", ".join(f"'{x}'" for x in column.values)
                     column_constraint = f" CHECK({column.name} IN ({values}))"
+                length = ""
+                if column.length:
+                    length = self.create_column_length(
+                        column.column_type
+                    ).format(length=column.length)
                 changed_sql.append(
                     self.modify_column_string()
                     .format(
                         name=self.wrap_column(name),
                         data_type=self.type_map.get(column.column_type),
                         nullable="NULL" if column.is_null else "NOT NULL",
-                        length=(
-                            "(" + str(column.length) + ")"
-                            if column.column_type
-                            not in self.types_without_lengths
-                            else ""
-                        ),
+                        length=length,
                         column_constraint=column_constraint,
                         constraint="PRIMARY KEY" if column.primary else "",
                     )
@@ -325,8 +324,11 @@ class PostgresPlatform(Platform):
                     )
 
                 if column.default is not None:
+                    default = f" DEFAULT {column.default}"
+                    if column.default in self.premapped_defaults:
+                        default = self.premapped_defaults[column.default]
                     changed_sql.append(
-                        f"ALTER COLUMN {self.wrap_column(name)} SET DEFAULT {column.default}"
+                        f"ALTER COLUMN {self.wrap_column(name)} SET{default}"
                     )
 
             sql.append(

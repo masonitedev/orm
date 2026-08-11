@@ -2,13 +2,13 @@
 
 import unittest
 import uuid
+from unittest.mock import patch
 
 import pendulum
 
 from src.masoniteorm.models import Model
 from src.masoniteorm.scopes import (
     SoftDeletesMixin,
-    TimeStampsMixin,
     TimeStampsScope,
     UUIDPrimaryKeyMixin,
     UUIDPrimaryKeyScope,
@@ -26,11 +26,11 @@ class UserWithUUID(Model, UUIDPrimaryKeyMixin):
     __dry__ = True
 
 
-class UserWithTimeStamps(Model, TimeStampsMixin):
+class UserWithTimeStamps(Model):
     __dry__ = True
 
 
-class UserWithCustomTimeStamps(Model, TimeStampsMixin):
+class UserWithCustomTimeStamps(Model):
     __dry__ = True
     date_updated_at = "updated_ts"
     date_created_at = "created_ts"
@@ -101,33 +101,52 @@ class TestTimeStampsScope(unittest.TestCase):
     def setUp(self):
         self.builder = MockBuilder(UserWithTimeStamps)
         self.scope = TimeStampsScope()
-        try:
-            del UserWithTimeStamps.__timestamps__
-        except Exception:
-            pass
+        # try:
+        #     del UserWithTimeStamps.__timestamps__
+        # except Exception:
+        #     pass
 
     def test_updated_and_created_dates_are_set_when_create(self):
         self.scope.set_timestamp_create(self.builder)
         self.assertIn("created_at", self.builder._creates)
         self.assertIn("updated_at", self.builder._creates)
         created_at = pendulum.parse(self.builder._creates["created_at"])
-        updated_at = pendulum.parse(self.builder._creates["updated_at"])
         self.assertIsInstance(created_at, pendulum.DateTime)
+        updated_at = pendulum.parse(self.builder._creates["updated_at"])
         self.assertIsInstance(updated_at, pendulum.DateTime)
 
     def test_timestamps_can_be_disabled(self):
-        UserWithTimeStamps.__timestamps__ = False
-        self.scope.set_timestamp_create(self.builder)
-        self.assertNotIn("created_at", self.builder._creates)
-        self.assertNotIn("updated_at", self.builder._creates)
+        with patch.object(UserWithTimeStamps, "__timestamps__", False):
+            self.assertFalse(self.builder._model.__timestamps__)
+            self.scope.set_timestamp_create(self.builder)
+            self.assertNotIn("created_at", self.builder._creates)
+            self.assertNotIn("updated_at", self.builder._creates)
+
+    def test_created_at_timestamp_can_be_disabled(self):
+        with patch.object(UserWithTimeStamps, "date_created_at", None):
+            self.assertIsNone(self.builder._model.date_created_at)
+            self.scope.set_timestamp_create(self.builder)
+            self.assertNotIn("created_at", self.builder._creates)
+            self.assertIn("updated_at", self.builder._creates)
+
+    def test_updated_at_timestamp_can_be_disabled(self):
+        with patch.object(UserWithTimeStamps, "date_updated_at", None):
+            self.assertIsNone(self.builder._model.date_updated_at)
+            self.scope.set_timestamp_create(self.builder)
+            self.assertIn("created_at", self.builder._creates)
+            self.assertNotIn("updated_at", self.builder._creates)
 
     def test_uses_custom_timestamp_columns_on_create(self):
         self.builder = MockBuilder(UserWithCustomTimeStamps)
+        created_column = self.builder._model.date_created_at
+        updated_column = self.builder._model.date_updated_at
         self.scope.set_timestamp_create(self.builder)
-        created_column = UserWithCustomTimeStamps.date_created_at
-        updated_column = UserWithCustomTimeStamps.date_updated_at
-        self.assertNotIn("created_at", self.builder._creates)
-        self.assertNotIn("updated_at", self.builder._creates)
+        self.assertNotIn(
+            UserWithTimeStamps.date_created_at, self.builder._creates
+        )
+        self.assertNotIn(
+            UserWithTimeStamps.date_updated_at, self.builder._creates
+        )
         self.assertIn(created_column, self.builder._creates)
         self.assertIn(updated_column, self.builder._creates)
         self.assertIsInstance(
@@ -138,6 +157,15 @@ class TestTimeStampsScope(unittest.TestCase):
             pendulum.parse(self.builder._creates[updated_column]),
             pendulum.DateTime,
         )
+
+    def test_enabked_timestamos_throw_if_both_missing(self):
+        class BrokenTimestampsSetup(Model):
+            __dry__ = True
+            date_created_at = None
+            date_updated_at = None
+
+        with self.assertRaises(AttributeError):
+            BrokenTimestampsSetup()
 
     def test_uses_custom_updated_column_on_update(self):
         user = UserWithCustomTimeStamps.hydrate({"id": 1})

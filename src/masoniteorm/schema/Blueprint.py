@@ -383,15 +383,22 @@ class Blueprint:
 
         return self
 
-    def timestamps(self):
+    def timestamps(self, created_at="created_at", updated_at="updated_at"):
         """Creates `created_at` and `updated_at` timestamp columns.
 
         Returns:
             self
         """
-        self.datetime("created_at", nullable=True, now=True)
+        if not created_at and not updated_at:
+            raise Exception(
+                "Invalid 'timestamps' arguments, 'created_at' and/or 'updated_at' parameters are required"
+            )
 
-        self.datetime("updated_at", nullable=True, now=True)
+        if created_at:
+            self.datetime(created_at, nullable=True, now=True)
+
+        if updated_at:
+            self.datetime(updated_at, nullable=True, now=True)
 
         return self
 

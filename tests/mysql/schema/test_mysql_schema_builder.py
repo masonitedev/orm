@@ -140,9 +140,9 @@ class TestMySQLSchemaBuilder(unittest.TestCase):
             blueprint.string("option").default("ADMIN")
             blueprint.string("remember_token").nullable()
             blueprint.timestamp("verified_at").nullable()
-            blueprint.timestamps()
+            blueprint.timestamps(updated_at=False)
 
-        self.assertEqual(len(blueprint.table.added_columns), 14)
+        self.assertEqual(len(blueprint.table.added_columns), 13)
         self.assertEqual(
             blueprint.to_sql(),
             [
@@ -151,10 +151,17 @@ class TestMySQLSchemaBuilder(unittest.TestCase):
                 "`name` VARCHAR(255) NOT NULL, `active` TINYINT(1) NOT NULL, `email` VARCHAR(255) NOT NULL, `gender` ENUM('male', 'female') NOT NULL, "
                 "`password` VARCHAR(255) NOT NULL, `money` DECIMAL(17, 6) NOT NULL, "
                 "`admin` INT(11) NOT NULL DEFAULT 0, `option` VARCHAR(255) NOT NULL DEFAULT 'ADMIN', `remember_token` VARCHAR(255) NULL, `verified_at` TIMESTAMP NULL, "
-                "`created_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP, `updated_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP, "
+                "`created_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP, "
                 "CONSTRAINT users_email_unique UNIQUE (email))"
             ],
         )
+
+    def test_raise_on_empty_timestamps(self):
+        with self.assertRaises(Exception):
+            with self.schema.create("users") as blueprint:
+                blueprint.increments("id")
+                blueprint.string("name")
+                blueprint.timestamps(created_at=False, updated_at=False)
 
     def test_can_add_primary_constraint_without_column_name(self):
         with self.schema.create("users") as blueprint:

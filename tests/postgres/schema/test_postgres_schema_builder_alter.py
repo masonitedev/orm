@@ -322,6 +322,19 @@ class TestPostgresSchemaBuilderAlter(unittest.TestCase):
         query_sql = blueprint.to_sql()
         self.assertEqual(query_sql, expected_sql)
 
+    def test_alter_existing_timestamp(self):
+        with self.schema.table("users") as blueprint:
+            blueprint.timestamp("created_at", now=True).change()
+        query_sql = blueprint.to_sql()
+        expected_sql = [
+            'ALTER TABLE "users" '
+            'ALTER COLUMN "created_at" TYPE TIMESTAMP, '
+            'ALTER COLUMN "created_at" SET NOT NULL, '
+            'ALTER COLUMN "created_at" SET DEFAULT CURRENT_TIMESTAMP'
+        ]
+
+        self.assertEqual(query_sql, expected_sql)
+
     def test_alter_drop_on_table_schema_table(self):
         with self.schema.table("table_schema") as blueprint:
             blueprint.drop_column("name")
